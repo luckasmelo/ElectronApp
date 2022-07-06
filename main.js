@@ -1,12 +1,15 @@
-// main.js
-
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, Notification } = require('electron')
+const { app, BrowserWindow, Notification, Tray, Menu, nativeImage } = require('electron')
 const path = require('path')
+let tray = null;
+let mainWindow = null;
 
 const createWindow = () => {
+  if(!tray)
+    createTray()
+
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -17,8 +20,12 @@ const createWindow = () => {
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 
+  mainWindow.on('close', event => {
+    event.preventDefault(); //this prevents it from closing. The `closed` event will not fire now
+    mainWindow.hide();
+  })
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 }
 
 
@@ -51,6 +58,29 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+
+function createTray () {
+  const icon = path.join(__dirname, '/public/assets/hat.png') // required.
+  const trayicon = nativeImage.createFromPath(icon)
+  tray = new Tray(trayicon.resize({ width: 16 }))
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show App',
+      click: () => {
+        mainWindow.show()
+      }
+    },
+    {
+      label: 'Quit',
+      click: () => {
+        app.exit() // actually exit the app with none dialog confirmation.
+      }
+    },
+  ])
+
+  tray.setContextMenu(contextMenu)
+}
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
